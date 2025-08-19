@@ -14,8 +14,8 @@ import 'package:super_baraem_kidergarten/src/core/network/dio_client.dart'
     as _i1008;
 import 'package:super_baraem_kidergarten/src/main_app/auth/presentation/cubit/auth_cubit_cubit.dart'
     as _i187;
-import 'package:super_baraem_kidergarten/src/main_app/presentation/pages/profile/presentation/cubit/profile_cubit.dart'
-    as _i517;
+import 'package:super_baraem_kidergarten/src/main_app/presentation/pages/profile/presentation/logic/profile/profile_cubit.dart'
+    as _i198;
 
 extension GetItInjectableX on _i174.GetIt {
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -29,7 +29,7 @@ extension GetItInjectableX on _i174.GetIt {
       environmentFilter,
     );
     gh.factory<_i187.AuthCubitCubit>(() => _i187.AuthCubitCubit());
-    gh.singleton<_i517.ProfileCubit>(() => _i517.ProfileCubit());
+    gh.singleton<_i198.ProfileCubit>(() => _i198.ProfileCubit());
     gh.lazySingleton<_i1008.DioClient>(() => _i1008.DioClient());
     return this;
   }

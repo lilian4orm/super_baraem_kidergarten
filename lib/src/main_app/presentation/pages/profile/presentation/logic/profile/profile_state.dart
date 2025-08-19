@@ -8,5 +8,6 @@ class ProfileState with _$ProfileState {
     String? contentUrl,
     LocalAccounts? localAccounts,
     DataFailed? dataFailed,
+    String? selectImage,
   }) = _Initial;
 }

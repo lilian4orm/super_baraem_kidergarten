@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -6,11 +5,14 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:super_baraem_kidergarten/src/core/enums/genaric_enums.dart';
 import 'package:super_baraem_kidergarten/src/core/functions/functions.dart';
 import 'package:super_baraem_kidergarten/src/core/local_db/local_db.dart';
+import 'package:super_baraem_kidergarten/src/core/network/network_handle_error.dart';
 import 'package:super_baraem_kidergarten/src/core/widgets/skeleton.dart';
 import 'package:super_baraem_kidergarten/src/main_app/auth/data/model/login_model.dart';
 import 'package:super_baraem_kidergarten/src/main_app/auth/presentation/widget/logout_widget.dart';
-import 'package:super_baraem_kidergarten/src/main_app/presentation/pages/profile/presentation/cubit/profile_cubit.dart';
+import 'package:super_baraem_kidergarten/src/main_app/presentation/pages/profile/presentation/dialog/dialog.dart';
+import 'package:super_baraem_kidergarten/src/main_app/presentation/pages/profile/presentation/logic/profile/profile_cubit.dart';
 import 'package:super_baraem_kidergarten/src/main_app/presentation/pages/profile/presentation/pages/attachement/attachement_documents_page.dart';
+import 'package:super_baraem_kidergarten/src/main_app/presentation/pages/profile/presentation/pages/widget/profile_image.dart';
 import 'package:super_baraem_kidergarten/src/utils/constants/const.dart';
 import 'package:super_baraem_kidergarten/src/utils/injector.dart';
 
@@ -52,65 +54,63 @@ class _StudentProfileState extends State<StudentProfile>
       value: profileCubit,
       child: Scaffold(
         backgroundColor: colorScheme.surface,
-        body: BlocBuilder<ProfileCubit, ProfileState>(
-          builder: (context, state) {
-            if (state.remoteDataStatus == RemoteDataStatus.loading) {
-              return _buildSkeletonLoading(context);
+        body: BlocListener<ProfileCubit, ProfileState>(
+          listener: (context, state) {
+            if (state.remoteDataStatus == RemoteDataStatus.error) {
+              NetworkHandler.handdleRequestExceptionMessages(state.dataFailed!);
             }
-
-            return CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                // Flexible App Bar with Profile Header
-                SliverAppBar(
-                  expandedHeight: MediaQuery.of(context).size.height * 0.3,
-                  pinned: true,
-                  stretch: true,
-                  backgroundColor: colorScheme.surface,
-                  actions: const [LogoutWidget()],
-                  flexibleSpace: FlexibleSpaceBar(
-                    titlePadding: EdgeInsets.zero,
-                    expandedTitleScale: 1.0,
-                    background: _buildProfileHeader(context, state),
-                  ),
-                  bottom: TabBar(
-                    controller: _tabController,
-                    labelColor: colorScheme.primary,
-                    unselectedLabelColor: colorScheme.onSurfaceVariant,
-                    indicatorColor: colorScheme.primary,
-                    indicatorSize: TabBarIndicatorSize.label,
-                    tabs: const [
-                      Tab(text: "المعلومات"),
-                      Tab(text: "الإجراءات"),
-                    ],
-                  ),
-                ),
-
-                // Tab Content
-                SliverFillRemaining(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // Information Tab
-                      _buildInformationTab(context, state),
-
-                      // Actions Tab
-                      _buildActionsTab(context),
-                    ],
-                  ),
-                ),
-              ],
-            );
           },
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            // Image upload functionality
-          },
-          backgroundColor: colorScheme.primaryContainer,
-          foregroundColor: colorScheme.onPrimaryContainer,
-          tooltip: "تعديل الصورة",
-          child: const Icon(LucideIcons.camera),
+          child: BlocBuilder<ProfileCubit, ProfileState>(
+            builder: (context, state) {
+              if (state.remoteDataStatus == RemoteDataStatus.loading) {
+                return _buildSkeletonLoading(context);
+              }
+
+              return CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  // Flexible App Bar with Profile Header
+                  SliverAppBar(
+                    expandedHeight: MediaQuery.of(context).size.height * 0.3,
+                    pinned: true,
+                    stretch: true,
+                    backgroundColor: colorScheme.surface,
+                    actions: const [LogoutWidget()],
+                    flexibleSpace: const FlexibleSpaceBar(
+                      titlePadding: EdgeInsets.zero,
+                      expandedTitleScale: 1.0,
+                      background: ProfileImage(),
+                    ),
+                    bottom: TabBar(
+                      controller: _tabController,
+                      labelColor: colorScheme.primary,
+                      unselectedLabelColor: colorScheme.onSurfaceVariant,
+                      indicatorColor: colorScheme.primary,
+                      indicatorSize: TabBarIndicatorSize.label,
+                      tabs: const [
+                        Tab(text: "المعلومات"),
+                        Tab(text: "الإجراءات"),
+                      ],
+                    ),
+                  ),
+
+                  // Tab Content
+                  SliverFillRemaining(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // Information Tab
+                        _buildInformationTab(context, state),
+
+                        // Actions Tab
+                        _buildActionsTab(context),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -249,155 +249,6 @@ class _StudentProfileState extends State<StudentProfile>
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, ProfileState state) {
-    final theme = Theme.of(context);
-    final query = MediaQuery.sizeOf(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primaryContainer,
-            theme.colorScheme.surface,
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-
-            // Avatar and school badge
-            Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                _profileImage(query, theme, state),
-
-                // School badge
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: _schooleImage(theme, state),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Student name
-            Text(
-              state.profileModel?.account.account_name ?? "",
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Class badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                "الشعبة : ${state.profileModel?.account.account_division_current?.leader ?? ""}",
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSecondaryContainer,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Container _schooleImage(ThemeData theme, ProfileState state) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(0.2),
-            blurRadius: 5,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(4),
-      child: ClipOval(
-        child: CachedNetworkImage(
-          imageUrl:
-              "${state.contentUrl}${state.profileModel?.account.school?.school_img}",
-          fit: BoxFit.cover,
-          placeholder:
-              (context, url) => SkeletonLoading(
-                w: double.infinity,
-                h: double.infinity,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest
-                    .withOpacity(0.6),
-              ),
-          errorWidget:
-              (context, url, error) =>
-                  Icon(LucideIcons.school, color: theme.colorScheme.primary),
-        ),
-      ),
-    );
-  }
-
-  Hero _profileImage(Size query, ThemeData theme, ProfileState state) {
-    return Hero(
-      tag: 'profile_image',
-      child: Container(
-        width: query.width * 0.3,
-        height: query.width * 0.3,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: theme.colorScheme.surface, width: 4),
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.shadow.withOpacity(0.2),
-              blurRadius: 10,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: ClipOval(
-          child: CachedNetworkImage(
-            imageUrl:
-                "${state.contentUrl}${state.profileModel?.account.account_img}",
-            fit: BoxFit.cover,
-            placeholder:
-                (context, url) => SkeletonLoading(
-                  w: double.infinity,
-                  h: double.infinity,
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest
-                      .withOpacity(0.6),
-                ),
-            errorWidget:
-                (context, url, error) => Container(
-                  color: theme.colorScheme.primary.withOpacity(0.2),
-                  child: Icon(
-                    LucideIcons.user,
-                    color: theme.colorScheme.primary,
-                    size: 40,
-                  ),
-                ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildInformationTab(BuildContext context, ProfileState state) {
     return AnimationLimiter(
       child: ListView(
@@ -496,13 +347,11 @@ class _StudentProfileState extends State<StudentProfile>
               ),
               _buildActionCard(
                 context,
-                "الملاحظات",
+                "تغيير الصورة",
                 "assets/icons/kinder/plus.png",
-                LucideIcons.clipboardList,
+                LucideIcons.image,
                 null,
-                onTap: () {
-                  // Notes functionality
-                },
+                onTap: showImagePickerOptions,
               ),
             ],
           ),

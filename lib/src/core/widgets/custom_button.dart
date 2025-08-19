@@ -6,11 +6,13 @@ class CustomButton extends StatelessWidget {
     required this.onPressed,
     required this.title,
     this.loading = false,
+    this.background,
   });
   final VoidCallback? onPressed;
 
   final String title;
   final bool loading;
+  final Color? background;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -26,7 +28,7 @@ class CustomButton extends StatelessWidget {
             ),
           ),
           style: ElevatedButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
+            backgroundColor: background ?? theme.colorScheme.primary,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
@@ -41,7 +43,7 @@ class CustomButton extends StatelessWidget {
         : ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
+            backgroundColor: background ?? theme.colorScheme.primary,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
